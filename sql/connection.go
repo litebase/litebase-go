@@ -245,7 +245,7 @@ func (c *Connection) Close() error {
 	return nil
 }
 
-func (c *Connection) Send(msg map[string]interface{}) (QueryResponse, error) {
+func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 	c.mutex.Lock()
 
 	if c.connecting {

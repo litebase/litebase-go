@@ -46,7 +46,7 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 		return nil, err
 	}
 
-	response, err := connection.Send(map[string]interface{}{
+	response, err := connection.Send(map[string]any{
 		"id":         uuid.NewString(),
 		"statement":  s.SQL,
 		"parameters": parameters,

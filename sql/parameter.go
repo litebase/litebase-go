@@ -6,8 +6,8 @@ import (
 )
 
 type Parameter struct {
-	Type  string      `json:"type"`
-	Value interface{} `json:"value"`
+	Type  string `json:"type"`
+	Value any    `json:"value"`
 }
 
 func prepareParameters(args []driver.Value) ([]Parameter, error) {

@@ -69,7 +69,7 @@ func (c *Conn) ExecContext(ctx context.Context, sql string, args []driver.NamedV
 		return nil, err
 	}
 
-	response, err := connection.Send(map[string]interface{}{
+	response, err := connection.Send(map[string]any{
 		"id":         uuid.NewString(),
 		"statement":  sql,
 		"parameters": parameters,
