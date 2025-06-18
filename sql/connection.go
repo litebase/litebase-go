@@ -26,6 +26,7 @@ type Connection struct {
 	connecting      bool
 	connected       chan struct{}
 	ctx             context.Context
+	connectionError error
 	id              string
 	mutex           *sync.Mutex
 	reader          io.ReadCloser
@@ -64,7 +65,14 @@ func NewConnection(url, accessKeyId, accessKeySecret string) *Connection {
 	c.writeQueue = NewWriteQueue(c)
 	c.connecting = true
 
-	go c.connect()
+	go func() {
+		err := c.connect()
+
+		if err != nil {
+			c.connectionError = err
+			c.Close()
+		}
+	}()
 
 	return c
 }
@@ -73,7 +81,6 @@ func (c *Connection) connect() error {
 	url, err := url.Parse(c.url)
 
 	if err != nil {
-		log.Fatalln(err)
 		return err
 	}
 
@@ -87,14 +94,14 @@ func (c *Connection) connect() error {
 		c.accessKeyID,
 		c.accessKeySecret,
 		"POST",
-		"/query/stream",
+		url.Path,
 		map[string]string{
 			"Content-Length": "0",
 			"Content-Type":   "application/octet-stream",
 			"Host":           host,
 			"X-LBDB-Date":    fmt.Sprintf("%d", time.Now().Unix()),
 		},
-		map[string]interface{}{},
+		map[string]any{},
 		map[string]string{},
 	)
 
@@ -102,11 +109,9 @@ func (c *Connection) connect() error {
 		Timeout: 0,
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/query/stream", c.url), c.reader)
+	req, err := http.NewRequest("POST", url.String(), c.reader)
 
 	if err != nil {
-		log.Fatalln(err)
-
 		return err
 	}
 
@@ -123,7 +128,6 @@ func (c *Connection) connect() error {
 	resp, err := httpClient.Do(req)
 
 	if err != nil {
-		log.Println(err)
 		return err
 	}
 
@@ -159,17 +163,12 @@ func (c *Connection) connect() error {
 				}
 
 				messageType := messageHeaderBytes[0]
-
 				messageLength := int(binary.LittleEndian.Uint32(messageHeaderBytes[1:]))
 
 				bytesRead := 0
 
 				for bytesRead < messageLength {
-					chunkSize := 1024 // Define a chunk size
-
-					if messageLength-bytesRead < chunkSize {
-						chunkSize = messageLength - bytesRead
-					}
+					chunkSize := min(messageLength-bytesRead, 1024)
 
 					n, err := io.CopyN(scanBuffer, resp.Body, int64(chunkSize))
 
@@ -231,7 +230,6 @@ func (c *Connection) connect() error {
 }
 
 func (c *Connection) Close() error {
-	log.Println("Closing connection")
 	if c.closed {
 		return nil
 	}
@@ -249,7 +247,13 @@ func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 	c.mutex.Lock()
 
 	if c.connecting {
-		<-c.connected
+		select {
+		case <-c.ctx.Done():
+			if c.connectionError != nil {
+				return QueryResponse{}, c.connectionError
+			}
+		case <-c.connected:
+		}
 	}
 
 	c.mutex.Unlock()
