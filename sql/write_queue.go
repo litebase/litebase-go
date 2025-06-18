@@ -4,7 +4,6 @@ import (
 	"context"
 	"log"
 	"sync"
-	"time"
 )
 
 type WriteQueue struct {
@@ -39,19 +38,14 @@ func (w *WriteQueue) work() {
 	for {
 		select {
 		case <-w.ctx.Done():
-			log.Println("Write queue stopped")
 			return
 		default:
-			// if delay > 0 {
-			time.Sleep(100 * time.Microsecond)
-			// }
-
 			w.mutex.Lock()
 			w.connection.mutex.Lock()
 
 			if len(w.frames) > 0 {
 				frame := w.frames[0]
-				// log.Println("Writing frame:", len(frame.queries))
+
 				_, err := w.connection.writer.Write(frame.Encode())
 
 				if err != nil {
