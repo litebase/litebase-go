@@ -69,10 +69,10 @@ func (c *Conn) ExecContext(ctx context.Context, sql string, args []driver.NamedV
 		return nil, err
 	}
 
-	response, err := connection.Send(map[string]any{
-		"id":         uuid.NewString(),
-		"statement":  sql,
-		"parameters": parameters,
+	response, err := connection.Send(Query{
+		ID:         uuid.NewString(),
+		Statement:  sql,
+		Parameters: parameters,
 	})
 
 	if err != nil {

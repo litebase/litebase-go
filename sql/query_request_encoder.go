@@ -6,7 +6,7 @@ import (
 )
 
 func QueryRequestEncoder(
-	msg map[string]any,
+	query Query,
 	outputBuffer *bytes.Buffer,
 	parametersBuffer *bytes.Buffer,
 ) []byte {
@@ -14,44 +14,42 @@ func QueryRequestEncoder(
 	parametersBuffer.Reset()
 	var transactionId string
 
-	id := msg["id"].(string)
-	statement := msg["statement"].(string)
+	id := query.ID
+	statement := query.Statement
 
-	if msg["transactionId"] != nil {
-		transactionId = msg["transactionId"].(string)
+	if query.TransactionID != "" {
+		transactionId = query.TransactionID
 	}
 
-	if msg["parameters"] != nil {
-		for _, parameter := range msg["parameters"].([]Parameter) {
-			parameterType := parameter.Type
+	for _, parameter := range query.Parameters {
+		parameterType := parameter.Type
 
-			// Write the value length
-			switch parameterType {
-			case "INTEGER":
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeInteger))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint64(parameter.Value.(int)))
-			case "FLOAT":
-			case "REAL":
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeFloat))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
-				binary.Write(parametersBuffer, binary.LittleEndian, parameter.Value.(float64))
-			case "TEXT":
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeText))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.(string))))
-				parametersBuffer.Write([]byte(parameter.Value.(string)))
-			case "BLOB":
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeBlob))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.([]byte))))
-				parametersBuffer.Write(parameter.Value.([]byte))
-			case "NULL":
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeNull))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
-			default:
-				// Unsupported parameter type
-				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeUnknown))
-				binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
-			}
+		// Write the value length
+		switch parameterType {
+		case "INTEGER":
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeInteger))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint64(parameter.Value.(int)))
+		case "FLOAT":
+		case "REAL":
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeFloat))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
+			binary.Write(parametersBuffer, binary.LittleEndian, parameter.Value.(float64))
+		case "TEXT":
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeText))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.(string))))
+			parametersBuffer.Write([]byte(parameter.Value.(string)))
+		case "BLOB":
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeBlob))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.([]byte))))
+			parametersBuffer.Write(parameter.Value.([]byte))
+		case "NULL":
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeNull))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
+		default:
+			// Unsupported parameter type
+			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeUnknown))
+			binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
 		}
 	}
 

@@ -46,10 +46,10 @@ func (s *Statement) Exec(args []driver.Value) (driver.Result, error) {
 		return nil, err
 	}
 
-	response, err := connection.Send(map[string]any{
-		"id":         uuid.NewString(),
-		"statement":  s.SQL,
-		"parameters": parameters,
+	response, err := connection.Send(Query{
+		ID:         uuid.NewString(),
+		Statement:  s.SQL,
+		Parameters: parameters,
 	})
 
 	if err != nil {
@@ -92,10 +92,10 @@ func (s *Statement) Query(args []driver.Value) (driver.Rows, error) {
 		return nil, err
 	}
 
-	response, err := connection.Send(map[string]interface{}{
-		"id":         uuid.NewString(),
-		"statement":  s.SQL,
-		"parameters": parameters,
+	response, err := connection.Send(Query{
+		ID:         uuid.NewString(),
+		Statement:  s.SQL,
+		Parameters: parameters,
 	})
 
 	if err != nil {

@@ -243,7 +243,7 @@ func (c *Connection) Close() error {
 	return nil
 }
 
-func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
+func (c *Connection) Send(query Query) (QueryResponse, error) {
 	c.mutex.Lock()
 
 	if c.connecting {
@@ -262,21 +262,19 @@ func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 		return QueryResponse{}, fmt.Errorf("connection is closed")
 	}
 
-	id, ok := msg["id"].(string)
-
-	if !ok {
-		// return QueryResponse{}, fmt.Errorf("message must have an id")
+	if query.ID == "" {
+		return QueryResponse{}, fmt.Errorf("message must have an id")
 	}
 
 	responseChannel := make(chan QueryResponse, 1)
 
 	c.mutex.Lock()
-	c.responses[id] = responseChannel
+	c.responses[query.ID] = responseChannel
 	c.mutex.Unlock()
 
 	defer func() {
 		c.mutex.Lock()
-		delete(c.responses, id)
+		delete(c.responses, query.ID)
 		c.mutex.Unlock()
 	}()
 
@@ -286,7 +284,7 @@ func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 	parametersBuffer := c.buffers.Get().(*bytes.Buffer)
 	defer c.buffers.Put(parametersBuffer)
 
-	queryRequest := QueryRequestEncoder(msg, outputBuffer, parametersBuffer)
+	queryRequest := QueryRequestEncoder(query, outputBuffer, parametersBuffer)
 
 	c.writeQueue.Write(queryRequest)
 
@@ -294,6 +292,6 @@ func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 	case response := <-responseChannel:
 		return response, nil
 	case <-time.After(3 * time.Second):
-		return QueryResponse{}, fmt.Errorf("timeout waiting for response %s", id)
+		return QueryResponse{}, fmt.Errorf("timeout waiting for response %s", query.ID)
 	}
 }
