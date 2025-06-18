@@ -262,8 +262,13 @@ func (c *Connection) Send(msg map[string]any) (QueryResponse, error) {
 		return QueryResponse{}, fmt.Errorf("connection is closed")
 	}
 
+	id, ok := msg["id"].(string)
+
+	if !ok {
+		// return QueryResponse{}, fmt.Errorf("message must have an id")
+	}
+
 	responseChannel := make(chan QueryResponse, 1)
-	id := msg["id"].(string)
 
 	c.mutex.Lock()
 	c.responses[id] = responseChannel

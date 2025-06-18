@@ -24,15 +24,24 @@ func QueryResponseDecoder(buffer *bytes.Buffer) []QueryResponse {
 		responseLength := buffer.Next(4)
 		response := buffer.Next(int(binary.LittleEndian.Uint32(responseLength)))
 		version := response[0]
-		idLength := int(binary.LittleEndian.Uint32(response[1:5]))
-		id := response[5 : 5+idLength]
-		errorLength := int(binary.LittleEndian.Uint32(response[5+idLength : 9+idLength]))
-		errorMessage := response[9+idLength : 9+idLength+errorLength]
+		offset := 1
+		idLength := int(binary.LittleEndian.Uint32(response[offset : offset+4]))
+		offset += 4
+		id := response[offset : offset+idLength]
+		offset += idLength
+		transactionIdLength := int(binary.LittleEndian.Uint32(response[offset : offset+4]))
+		offset += 4
+		transactionId := response[offset : offset+transactionIdLength]
+		offset += transactionIdLength
+		errorLength := int(binary.LittleEndian.Uint32(response[offset : offset+4]))
+		offset += 4
+		errorMessage := response[offset : offset+errorLength]
 
 		responses = append(responses, QueryResponse{
-			Data: QueryresponseData{
-				Version: version,
-				ID:      id,
+			Data: QueryResponseData{
+				Version:       version,
+				ID:            id,
+				TransactionId: transactionId,
 			},
 			Error: errorMessage,
 		})
@@ -69,7 +78,7 @@ func QueryResponseDecoder(buffer *bytes.Buffer) []QueryResponse {
 		rows := decodeRows(rowsCount, columnsCount, rowBytes)
 
 		responses = append(responses, QueryResponse{
-			Data: QueryresponseData{
+			Data: QueryResponseData{
 				Version:         version,
 				Changes:         changes,
 				Latency:         latency,

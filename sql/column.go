@@ -3,6 +3,7 @@ package sql
 type ColumnType int
 
 const (
+	ColumnTypeUnknown ColumnType = 0
 	ColumnTypeInteger ColumnType = 1
 	ColumnTypeFloat   ColumnType = 2
 	ColumnTypeText    ColumnType = 3

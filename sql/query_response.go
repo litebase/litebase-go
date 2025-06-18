@@ -1,11 +1,11 @@
 package sql
 
 type QueryResponse struct {
-	Data  QueryresponseData
+	Data  QueryResponseData
 	Error []byte
 }
 
-type QueryresponseData struct {
+type QueryResponseData struct {
 	Version         byte
 	Changes         int64
 	Latency         float64

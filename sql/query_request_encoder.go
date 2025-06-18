@@ -22,8 +22,6 @@ func QueryRequestEncoder(
 	}
 
 	if msg["parameters"] != nil {
-		msg["parameters"] = []Parameter{}
-
 		for _, parameter := range msg["parameters"].([]Parameter) {
 			parameterType := parameter.Type
 
@@ -48,6 +46,10 @@ func QueryRequestEncoder(
 				parametersBuffer.Write(parameter.Value.([]byte))
 			case "NULL":
 				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeNull))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
+			default:
+				// Unsupported parameter type
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeUnknown))
 				binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
 			}
 		}
