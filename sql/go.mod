@@ -1,4 +1,4 @@
-module github.com/litebase/litebase-go
+module github.com/litebase/litebase-go/sql
 
 go 1.23
 

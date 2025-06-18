@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	litebaseSql "github.com/litebase/litebase-go"
+	litebaseSql "github.com/litebase/litebase-go/sql"
 )
 
 func TestDriver(t *testing.T) {

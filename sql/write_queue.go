@@ -7,16 +7,12 @@ import (
 	"time"
 )
 
-// const writeDelay = 50 * time.Millisecond
-
 type WriteQueue struct {
 	connection *Connection
 	cancel     context.CancelFunc
 	ctx        context.Context
 	frames     []*Frame
 	mutex      *sync.Mutex
-	// queryCount int
-	// lastCheck  time.Time
 }
 
 func NewWriteQueue(connection *Connection) *WriteQueue {
@@ -28,32 +24,12 @@ func NewWriteQueue(connection *Connection) *WriteQueue {
 		ctx:        ctx,
 		frames:     []*Frame{},
 		mutex:      &sync.Mutex{},
-		// queryCount: 0,
-		// lastCheck:  time.Now(),
 	}
 
 	go w.work()
 
 	return w
 }
-
-// func (w *WriteQueue) calculateDelay() time.Duration {
-// 	now := time.Now()
-// 	elapsed := now.Sub(w.lastCheck).Seconds()
-
-// 	if elapsed >= 1 {
-// 		qps := float64(w.queryCount) / elapsed
-// 		w.queryCount = 0
-// 		w.lastCheck = now
-
-// 		// Add 1ms delay per 1000 QPS
-// 		if qps > 500 {
-// 			return time.Duration(qps/500) * time.Millisecond
-// 		}
-// 	}
-
-// 	return 0
-// }
 
 func (w *WriteQueue) Close() {
 	w.cancel()
