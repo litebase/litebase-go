@@ -219,7 +219,7 @@ func (c *Connection) connect() error {
 					responseChannel <- queryResponses[0]
 				} else {
 					c.buffers.Put(responseBuffer)
-					log.Fatalln("No response channel for id:", string(id))
+					log.Println("No response channel for id:", string(id))
 					continue
 				}
 			}
