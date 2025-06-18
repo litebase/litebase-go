@@ -6,7 +6,7 @@ import (
 )
 
 func QueryRequestEncoder(
-	msg map[string]interface{},
+	msg map[string]any,
 	outputBuffer *bytes.Buffer,
 	parametersBuffer *bytes.Buffer,
 ) []byte {
@@ -21,31 +21,35 @@ func QueryRequestEncoder(
 		transactionId = msg["transactionId"].(string)
 	}
 
-	for _, parameter := range msg["parameters"].([]Parameter) {
-		parameterType := parameter.Type
+	if msg["parameters"] != nil {
+		msg["parameters"] = []Parameter{}
 
-		// Write the value length
-		switch parameterType {
-		case "INTEGER":
-			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeInteger))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint64(parameter.Value.(int)))
-		case "FLOAT":
-		case "REAL":
-			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeFloat))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
-			binary.Write(parametersBuffer, binary.LittleEndian, parameter.Value.(float64))
-		case "TEXT":
-			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeText))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.(string))))
-			parametersBuffer.Write([]byte(parameter.Value.(string)))
-		case "BLOB":
-			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeBlob))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.([]byte))))
-			parametersBuffer.Write(parameter.Value.([]byte))
-		case "NULL":
-			binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeNull))
-			binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
+		for _, parameter := range msg["parameters"].([]Parameter) {
+			parameterType := parameter.Type
+
+			// Write the value length
+			switch parameterType {
+			case "INTEGER":
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeInteger))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint64(parameter.Value.(int)))
+			case "FLOAT":
+			case "REAL":
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeFloat))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(8))
+				binary.Write(parametersBuffer, binary.LittleEndian, parameter.Value.(float64))
+			case "TEXT":
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeText))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.(string))))
+				parametersBuffer.Write([]byte(parameter.Value.(string)))
+			case "BLOB":
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeBlob))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(len(parameter.Value.([]byte))))
+				parametersBuffer.Write(parameter.Value.([]byte))
+			case "NULL":
+				binary.Write(parametersBuffer, binary.LittleEndian, uint8(ColumnTypeNull))
+				binary.Write(parametersBuffer, binary.LittleEndian, uint32(0))
+			}
 		}
 	}
 
