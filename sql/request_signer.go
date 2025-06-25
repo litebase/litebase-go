@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 
 	"golang.org/x/exp/slices"
@@ -18,12 +17,23 @@ func SignRequest(
 	method string,
 	path string,
 	headers map[string]string,
-	data map[string]interface{},
+	data []byte,
 	queryParams map[string]string,
 ) string {
+	// Calculate body hash BEFORE any transformations
+	var bodyHash string
+
+	if len(data) > 0 {
+		bodyHashSum := sha256.Sum256(data)
+		bodyHash = fmt.Sprintf("%x", bodyHashSum)
+	} else {
+		emptyBodyHashSum := sha256.Sum256(nil)
+		bodyHash = fmt.Sprintf("%x", emptyBodyHashSum)
+	}
+
+	// Now transform headers for signing
 	for key, value := range headers {
 		delete(headers, key)
-
 		headers[TransformHeaderKey(key)] = value
 	}
 
@@ -33,44 +43,26 @@ func SignRequest(
 		}
 	}
 
+	// Transform query params
 	for key, value := range queryParams {
 		delete(queryParams, key)
-
 		queryParams[strings.ToLower(key)] = value
-	}
-
-	for key, value := range data {
-		delete(data, key)
-
-		data[strings.ToLower(key)] = value
 	}
 
 	jsonHeaders, err := json.Marshal(headers)
 	var jsonQueryParams []byte
-	var jsonBody []byte
 
 	if len(queryParams) > 0 {
 		jsonQueryParams, err = json.Marshal(queryParams)
-
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	} else {
 		jsonQueryParams = []byte("{}")
 	}
 
-	if len(data) > 0 {
-		jsonBody, err = json.Marshal(data)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		jsonBody = []byte("{}")
-	}
-
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	requestString := strings.Join([]string{
@@ -78,7 +70,7 @@ func SignRequest(
 		fmt.Sprintf("/%s", strings.TrimLeft(path, "/")),
 		string(jsonHeaders),
 		string(jsonQueryParams),
-		string(jsonBody),
+		bodyHash,
 	}, "")
 
 	signedRequestHash := sha256.New()
@@ -98,7 +90,7 @@ func SignRequest(
 	signature := fmt.Sprintf("%x", signatureHash.Sum(nil))
 
 	token := base64.StdEncoding.EncodeToString(
-		[]byte(fmt.Sprintf("credential=%s;signed_headers=content-type,host,x-lbdb-date;signature=%s", accessKeyID, signature)),
+		fmt.Appendf(nil, "credential=%s;signed_headers=content-type,host,x-lbdb-date;signature=%s", accessKeyID, signature),
 	)
 
 	return token

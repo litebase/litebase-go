@@ -101,7 +101,7 @@ func (c *Connection) connect() error {
 			"Host":           host,
 			"X-LBDB-Date":    fmt.Sprintf("%d", time.Now().Unix()),
 		},
-		map[string]any{},
+		nil,
 		map[string]string{},
 	)
 

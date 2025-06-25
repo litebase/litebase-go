@@ -117,7 +117,7 @@ func (c *Conn) Ping(ctx context.Context) error {
 			"Host":           host,
 			"X-LBDB-Date":    fmt.Sprintf("%d", time.Now().Unix()),
 		},
-		map[string]interface{}{},
+		nil,
 		map[string]string{},
 	)
 
