@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"sync"
@@ -78,7 +79,9 @@ func NewConnection(url, accessKeyId, accessKeySecret string) *Connection {
 }
 
 func (c *Connection) connect() error {
-	url, err := url.Parse(c.url)
+	connectionURL := fmt.Sprintf("%s/query/stream", c.url)
+
+	url, err := url.Parse(connectionURL)
 
 	if err != nil {
 		return err
@@ -105,8 +108,16 @@ func (c *Connection) connect() error {
 		map[string]string{},
 	)
 
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   3 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+	}
+
 	httpClient := &http.Client{
-		Timeout: 0,
+		Timeout:   0,
+		Transport: transport,
 	}
 
 	req, err := http.NewRequest("POST", url.String(), c.reader)
@@ -119,16 +130,60 @@ func (c *Connection) connect() error {
 	req.Header.Set("X-LBDB-Date", fmt.Sprintf("%d", time.Now().Unix()))
 	req.Header.Set("Authorization", token)
 
-	// Send connection message
+	respChan := make(chan *http.Response, 1)
+	httpErrChan := make(chan error, 1)
+
+	// Start the HTTP request
 	go func() {
-		c.writer.Write([]byte{byte(QueryStreamOpenConnection)})
-		c.writer.Flush()
+		resp, err := httpClient.Do(req)
+
+		if err != nil {
+			httpErrChan <- err
+			return
+		}
+		respChan <- resp
 	}()
 
-	resp, err := httpClient.Do(req)
+	// Send connection message with timeout after request starts
+	connectionMsgChan := make(chan error, 1)
+	go func() {
+		// Give the HTTP request a moment to start
+		time.Sleep(10 * time.Millisecond)
 
-	if err != nil {
+		_, err := c.writer.Write([]byte{byte(QueryStreamOpenConnection)})
+		if err != nil {
+			connectionMsgChan <- err
+			return
+		}
+
+		err = c.writer.Flush()
+		if err != nil {
+			connectionMsgChan <- err
+			return
+		}
+
+		connectionMsgChan <- nil
+	}()
+
+	// Wait for connection message to be sent or timeout
+	select {
+	case err := <-connectionMsgChan:
+		if err != nil {
+			return fmt.Errorf("failed to send connection message: %w", err)
+		}
+	case <-time.After(3 * time.Second):
+		return fmt.Errorf("timeout sending connection message after 3 seconds")
+	}
+
+	// Wait for HTTP response
+	var resp *http.Response
+	select {
+	case resp = <-respChan:
+		// HTTP request completed successfully
+	case err := <-httpErrChan:
 		return err
+	case <-time.After(5 * time.Second):
+		return fmt.Errorf("timeout waiting for HTTP response")
 	}
 
 	if resp.StatusCode != 200 {
