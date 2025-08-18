@@ -128,7 +128,7 @@ func (c *Connection) connect() error {
 
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-LBDB-Date", fmt.Sprintf("%d", time.Now().Unix()))
-	req.Header.Set("Authorization", token)
+	req.Header.Set("Authorization", fmt.Sprintf("Litebase-HMAC-SHA256 %s", token))
 
 	respChan := make(chan *http.Response, 1)
 	httpErrChan := make(chan error, 1)

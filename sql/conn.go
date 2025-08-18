@@ -135,7 +135,7 @@ func (c *Conn) Ping(ctx context.Context) error {
 
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("X-LBDB-Date", fmt.Sprintf("%d", time.Now().Unix()))
-	req.Header.Set("Authorization", token)
+	req.Header.Set("Authorization", fmt.Sprintf("Litebase-HMAC-SHA256 %s", token))
 
 	resp, err := httpClient.Do(req)
 
