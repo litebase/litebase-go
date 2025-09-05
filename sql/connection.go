@@ -99,10 +99,10 @@ func (c *Connection) connect() error {
 		"POST",
 		url.Path,
 		map[string]string{
-			"Content-Length": "0",
-			"Content-Type":   "application/octet-stream",
-			"Host":           host,
-			"X-LBDB-Date":    fmt.Sprintf("%d", time.Now().Unix()),
+			"Content-Length":  "0",
+			"Content-Type":    "application/octet-stream",
+			"Host":            host,
+			"X-Litebase-Date": fmt.Sprintf("%d", time.Now().Unix()),
 		},
 		nil,
 		map[string]string{},
@@ -127,7 +127,7 @@ func (c *Connection) connect() error {
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("X-LBDB-Date", fmt.Sprintf("%d", time.Now().Unix()))
+	req.Header.Set("X-Litebase-Date", fmt.Sprintf("%d", time.Now().Unix()))
 	req.Header.Set("Authorization", fmt.Sprintf("Litebase-HMAC-SHA256 %s", token))
 
 	respChan := make(chan *http.Response, 1)

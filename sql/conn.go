@@ -112,10 +112,10 @@ func (c *Conn) Ping(ctx context.Context) error {
 		"POST",
 		"/query/stream",
 		map[string]string{
-			"Content-Length": "0",
-			"Content-Type":   "application/octet-stream",
-			"Host":           host,
-			"X-LBDB-Date":    fmt.Sprintf("%d", time.Now().Unix()),
+			"Content-Length":  "0",
+			"Content-Type":    "application/octet-stream",
+			"Host":            host,
+			"X-Litebase-Date": fmt.Sprintf("%d", time.Now().Unix()),
 		},
 		nil,
 		map[string]string{},
@@ -134,7 +134,7 @@ func (c *Conn) Ping(ctx context.Context) error {
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("X-LBDB-Date", fmt.Sprintf("%d", time.Now().Unix()))
+	req.Header.Set("X-Litebase-Date", fmt.Sprintf("%d", time.Now().Unix()))
 	req.Header.Set("Authorization", fmt.Sprintf("Litebase-HMAC-SHA256 %s", token))
 
 	resp, err := httpClient.Do(req)
