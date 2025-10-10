@@ -6,22 +6,24 @@ import (
 )
 
 type Rows struct {
-	columns []string
-	index   int
-	rows    [][]Column
+	columns     []string
+	columnDefs  []ColumnDefinition
+	index       int
+	rows        [][]Column
 }
 
-func NewRows(columnData [][]byte, rows [][]Column) *Rows {
+func NewRows(columnData []ColumnDefinition, rows [][]Column) *Rows {
 	columns := make([]string, len(columnData))
 
 	for i, column := range columnData {
-		columns[i] = string(column)
+		columns[i] = column.ColumnName
 	}
 
 	return &Rows{
-		columns: columns,
-		index:   -1,
-		rows:    rows,
+		columns:    columns,
+		columnDefs: columnData,
+		index:      -1,
+		rows:       rows,
 	}
 }
 

@@ -13,7 +13,7 @@ type QueryResponseData struct {
 	RowsCount       int
 	LastInsertRowID int
 	ID              []byte
-	Columns         [][]byte
+	Columns         []ColumnDefinition
 	Rows            [][]Column
 	TransactionId   []byte
 }

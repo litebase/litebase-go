@@ -1,13 +1,13 @@
 package sql
 
 type Result struct {
-	Columns      [][]byte
+	Columns      []ColumnDefinition
 	changes      int64
 	lastInsertId int64
 	Rows         [][]Column
 }
 
-func NewResult(columns [][]byte, changes, lastInsertId int64, rows [][]Column) *Result {
+func NewResult(columns []ColumnDefinition, changes, lastInsertId int64, rows [][]Column) *Result {
 	return &Result{
 		Columns:      columns,
 		changes:      changes,

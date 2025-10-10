@@ -96,15 +96,28 @@ func QueryResponseDecoder(buffer *bytes.Buffer) []QueryResponse {
 	return responses
 }
 
-func decodeColumns(columnCount int, columnsBytes []byte) [][]byte {
+func decodeColumns(columnCount int, columnsBytes []byte) []ColumnDefinition {
 	offset := 0
-	columns := make([][]byte, columnCount)
+	columns := make([]ColumnDefinition, columnCount)
 	index := 0
 
 	for offset < len(columnsBytes) {
-		columnLength := int(binary.LittleEndian.Uint32(columnsBytes[offset : offset+4]))
-		columns[index] = columnsBytes[offset+4 : offset+4+columnLength]
-		offset += 4 + columnLength
+		// Read column name length (4 bytes)
+		columnNameLength := int(binary.LittleEndian.Uint32(columnsBytes[offset : offset+4]))
+		offset += 4
+
+		// Read column name
+		columnName := string(columnsBytes[offset : offset+columnNameLength])
+		offset += columnNameLength
+
+		// Read column type (4 bytes, as int32)
+		columnType := ColumnType(int32(binary.LittleEndian.Uint32(columnsBytes[offset : offset+4])))
+		offset += 4
+
+		columns[index] = ColumnDefinition{
+			ColumnName: columnName,
+			ColumnType: columnType,
+		}
 		index++
 	}
 
@@ -113,8 +126,7 @@ func decodeColumns(columnCount int, columnsBytes []byte) [][]byte {
 
 func decodeRows(rowsCount, columnsCount int, rowsBytes []byte) [][]Column {
 	rowsOffset := 0
-	rows := make([][]Column, rowsCount)
-	currentRow := make([]Column, columnsCount)
+	rows := make([][]Column, 0, rowsCount)
 
 	for rowsOffset < len(rowsBytes) {
 		rowLength := int(binary.LittleEndian.Uint32(rowsBytes[rowsOffset : rowsOffset+4]))
@@ -122,6 +134,8 @@ func decodeRows(rowsCount, columnsCount int, rowsBytes []byte) [][]Column {
 		rowOffset := rowsOffset
 		rowsOffset += rowLength
 
+		// Create a new row for each iteration
+		currentRow := make([]Column, columnsCount)
 		columnIndex := 0
 
 		for rowOffset < rowsOffset {

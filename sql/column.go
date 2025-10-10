@@ -11,6 +11,11 @@ const (
 	ColumnTypeNull    ColumnType = 5
 )
 
+type ColumnDefinition struct {
+	ColumnName string     `json:"name"`
+	ColumnType ColumnType `json:"type"`
+}
+
 type Column struct {
 	Type  ColumnType
 	Value []byte
