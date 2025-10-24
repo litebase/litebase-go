@@ -8,7 +8,7 @@ import (
 )
 
 func TestDriver(t *testing.T) {
-	db, err := sql.Open("litebase", "access_key_id=test access_key_secret=test url=http://localhost:8080")
+	db, err := sql.Open("litebase", "accessKeyId=test accessKeySecret=test url=http://localhost:8080")
 
 	if err != nil {
 		t.Fatal(err)
@@ -27,21 +27,21 @@ func TestDriver(t *testing.T) {
 	}
 
 	// Fails without an access key
-	_, err = sql.Open("litebase", "access=key_id= access_key_secret=test url=http://localhost:8080")
+	_, err = sql.Open("litebase", "access=key_id accessKeySecret=test url=http://localhost:8080")
 
 	if err == nil {
 		t.Fatal("Expected error but got nil")
 	}
 
 	// Fails without a secret key
-	_, err = sql.Open("litebase", "access_key_id=test access_key_secret= url=http://localhost:8080")
+	_, err = sql.Open("litebase", "accessKeyId=test accessKeySecret= url=http://localhost:8080")
 
 	if err == nil {
 		t.Fatal("Expected error but got nil")
 	}
 
 	// Fails without a URL
-	_, err = sql.Open("litebase", "access_key_id=test access_key_secret=test url=")
+	_, err = sql.Open("litebase", "accessKeyId=test accessKeySecret=test url=")
 
 	if err == nil {
 		t.Fatal("Expected error but got nil")
@@ -49,7 +49,7 @@ func TestDriver(t *testing.T) {
 }
 
 func TestDriverExec(t *testing.T) {
-	db, err := sql.Open("litebase", "access_key_id=test access_key_secret=test url=http://localhost:8080")
+	db, err := sql.Open("litebase", "accessKeyId=test accessKeySecret=test url=http://localhost:8080")
 
 	if err != nil {
 		t.Fatal(err)

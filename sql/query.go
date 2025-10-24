@@ -4,5 +4,5 @@ type Query struct {
 	ID            string      `json:"id"`
 	Statement     string      `json:"statement"`
 	Parameters    []Parameter `json:"parameters"`
-	TransactionID string      `json:"transaction_id"`
+	TransactionID string      `json:"transactionId"`
 }

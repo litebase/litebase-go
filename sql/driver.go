@@ -28,20 +28,20 @@ func (d *Driver) OpenConnector(name string) (driver.Connector, error) {
 	}
 
 	// Validate required fields
-	if args["access_key_id"] == "" {
-		return nil, errors.New("access_key_id is required")
+	if args["accessKeyId"] == "" {
+		return nil, errors.New("accessKeyId is required")
 	}
 
-	if args["access_key_secret"] == "" {
-		return nil, errors.New("access_key_secret is required")
+	if args["accessKeySecret"] == "" {
+		return nil, errors.New("accessKeySecret is required")
 	}
 
 	if args["url"] == "" {
 		return nil, errors.New("url is required")
 	}
 
-	accessKeyId = args["access_key_id"]
-	accessKeySecret = args["access_key_secret"]
+	accessKeyId = args["accessKeyId"]
+	accessKeySecret = args["accessKeySecret"]
 	url = args["url"]
 
 	return &Connector{
