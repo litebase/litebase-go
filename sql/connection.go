@@ -19,22 +19,24 @@ import (
 )
 
 type Connection struct {
-	accessKeyID     string
-	accessKeySecret string
-	buffers         *sync.Pool
-	cancel          context.CancelFunc
-	closed          bool
-	connecting      bool
-	connected       chan struct{}
-	ctx             context.Context
-	connectionError error
-	id              string
-	mutex           *sync.Mutex
-	reader          io.ReadCloser
-	responses       map[string]chan QueryResponse
-	writeQueue      *WriteQueue
-	writer          *bufio.Writer
-	url             string
+	accessKeyID       string
+	accessKeySecret   string
+	buffers           *sync.Pool
+	cancel            context.CancelFunc
+	closed            bool
+	connecting        bool
+	connected         chan struct{}
+	ctx               context.Context
+	connectionError   error
+	date              string
+	id                string
+	mutex             *sync.Mutex
+	previousSignature string
+	reader            io.ReadCloser
+	responses         map[string]chan QueryResponse
+	writeQueue        *WriteQueue
+	writer            *bufio.Writer
+	url               string
 }
 
 func NewConnection(url, accessKeyId, accessKeySecret string) *Connection {
@@ -93,6 +95,9 @@ func (c *Connection) connect() error {
 		host = fmt.Sprintf("%s:%s", host, url.Port())
 	}
 
+	// Store the date for chunk signing
+	c.date = fmt.Sprintf("%d", time.Now().Unix())
+
 	token := SignRequest(
 		c.accessKeyID,
 		c.accessKeySecret,
@@ -102,11 +107,20 @@ func (c *Connection) connect() error {
 			"Content-Length":  "0",
 			"Content-Type":    "application/octet-stream",
 			"Host":            host,
-			"X-Litebase-Date": fmt.Sprintf("%d", time.Now().Unix()),
+			"X-Litebase-Date": c.date,
 		},
-		nil,
+		[]byte("STREAMING-LITEBASE-HMAC-SHA256-PAYLOAD"),
 		map[string]string{},
 	)
+
+	// Extract the seed signature from the token for chunk signing
+	seedSignature, err := ExtractSignatureFromToken(token)
+
+	if err != nil {
+		return err
+	}
+
+	c.previousSignature = seedSignature
 
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
@@ -127,7 +141,7 @@ func (c *Connection) connect() error {
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("X-Litebase-Date", fmt.Sprintf("%d", time.Now().Unix()))
+	req.Header.Set("X-Litebase-Date", c.date)
 	req.Header.Set("Authorization", fmt.Sprintf("Litebase-HMAC-SHA256 %s", token))
 
 	respChan := make(chan *http.Response, 1)

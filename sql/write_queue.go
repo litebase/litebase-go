@@ -46,7 +46,14 @@ func (w *WriteQueue) work() {
 			if len(w.frames) > 0 {
 				frame := w.frames[0]
 
-				_, err := w.connection.writer.Write(frame.Encode())
+				// Encode the frame with chunk signature
+				encodedFrame, newSignature := frame.EncodeWithSignature(
+					w.connection.accessKeySecret,
+					w.connection.date,
+					w.connection.previousSignature,
+				)
+
+				_, err := w.connection.writer.Write(encodedFrame)
 
 				if err != nil {
 					log.Println("Error writing request:", err)
@@ -59,6 +66,9 @@ func (w *WriteQueue) work() {
 					log.Println("Error flushing buffer:", err)
 					// TODO: Handle error
 				}
+
+				// Update the previous signature for the next chunk
+				w.connection.previousSignature = newSignature
 
 				w.frames = w.frames[1:]
 			}
